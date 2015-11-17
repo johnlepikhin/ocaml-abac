@@ -1,7 +1,7 @@
 
 module Config =
 struct
-  type request = [ `IsAdmin | `UserId of bytes ] list
+  type request = [ `IsAdmin | `UserId of bytes | `Action of bytes ] list
   type resource = [ `ObjectType of bytes | `Action of bytes | `Owner of bytes ] list
 end
 
@@ -37,9 +37,9 @@ let comments : M.result M.t = asPermitDeny resComment &&& denyUnlessPermit [
   ];
 ]
 
-let request = [`UserId "john"; `IsAdmin ]
+let request = [`UserId "john"; `Action "edit" ]
 
-let resource = [`ObjectType "comment"; `Action "edit"; `Owner "john1" ]
+let resource = [`ObjectType "comment"; `Action "edit"; `Owner "john" ]
 
 let () =
   let r = eval ~resource ~request comments in
