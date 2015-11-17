@@ -1,171 +1,200 @@
 
-type permit = [ `Permit ]
+module type CONFIG =
+sig
+  type resource
 
-type deny = [ `Deny ]
+  type request
+end
 
-type permitDeny = [ permit | deny ]
+module type S =
+sig
+  type resource
+  
+  type request
 
-type notApplicable = [ `NotApplicable ]
+  type permit = [ `Permit ]
 
-type failure = [ `Failure ]
+  type deny = [ `Deny ]
 
-type result = [ permit | deny | notApplicable | failure ]
+  type permitDeny = [ `Deny | `Permit ]
 
-type ('request, 'resource, 'result) logic =
-  resource : 'resource -> request : 'request -> 'result
+  type notApplicable = [ `NotApplicable ]
 
-type ('resource, 'result) targetResource =
-  resource : 'resource -> 'result
-    constraint 'result = [< permit | notApplicable ]
+  type failure = [ `Failure ]
 
-type ('request, 'result) targetRequest =
-  request : 'request -> 'result
-    constraint 'result = [< permit | notApplicable ]
+  type result = [ `Deny | `Failure | `NotApplicable | `Permit ]
 
-type ('request, 'resource, 'result) target =
-  ('request, 'resource, 'result) logic
-    constraint 'result = [< permit | notApplicable ]
+  type targetResult = [ `NotApplicable | `Permit ]
 
-type ('request, 'resource, 'result) condition =
-  ('request, 'resource, 'result) logic
+  type 'result target = resource : resource -> request : request -> 'result
+    constraint 'result = [< targetResult ]
+
+  type 'result targetResource = resource : resource -> 'result
+    constraint 'result = [< targetResult ]
+
+  type 'result targetRequest = request : request -> 'result
+    constraint 'result = [< targetResult ]
+
+  type 'result condition = resource : resource -> request : request -> 'result
     constraint 'result = [< result ]
 
-let string_of_result = function
-  | `Permit -> "Permit"
-  | `Deny -> "Deny"
-  | `NotApplicable -> "NotApplicable"
-  | `Failure -> "Failure"
+  type ('inresult, 'outresult) plus =
+    'inresult t ->
+    'inresult t list -> 'outresult t
+      
+  and ('inresult, 'outresult) star =
+    'inresult t list -> 'outresult t
+      
+  and ('inresult, 'outresult) one =
+    'inresult t -> 'outresult t
+      
+  and ('inresult, 'outresult) two =
+    'inresult t -> 'inresult t -> 'outresult t
+      
+  and 'result t
 
-module Combinator
-  : sig
-    type ('request, 'resource, 'inresult, 'outresult) plus =
-      ('request, 'resource, 'inresult) t
-      -> ('request, 'resource, 'inresult) t list
-      -> ('request, 'resource, 'outresult) t
+  val targetResource :
+    [< targetResult] targetResource -> [> targetResult] t
 
-    and ('request, 'resource, 'inresult, 'outresult) star =
-      ('request, 'resource, 'inresult) t list
-      -> ('request, 'resource, 'outresult) t
+  val targetRequest :
+    [< targetResult] targetRequest -> [> targetResult] t
 
-    and ('request, 'resource, 'inresult, 'outresult) one =
-      ('request, 'resource, 'inresult) t
-      -> ('request, 'resource, 'outresult) t
+  val target : [< targetResult] target -> [> targetResult] t
 
-    and ('request, 'resource, 'inresult, 'outresult) two =
-      ('request, 'resource, 'inresult) t
-      -> ('request, 'resource, 'inresult) t
-      -> ('request, 'resource, 'outresult) t
+  val condition : [< result ] condition -> [> result ] t
 
-    and ('request, 'resource, 'result) t
+  val and' : (permitDeny, [> permitDeny ]) plus
 
-    val targetResource: ('res, 'result) targetResource -> ('req, 'res, [> permit | notApplicable ]) t
-    val targetRequest: ('req, 'result) targetRequest -> ('req, 'res, [> permit | notApplicable ]) t
-    val target: ('req, 'res, 'result) target -> ('req, 'res, [> permit | notApplicable ]) t
-        
-    val condition: ('req, 'res, 'result) condition -> ('req, 'res, [> result ]) t
+  val or' : (permitDeny, [> permitDeny ]) plus
 
-    val and': ('req, 'res, permitDeny, [> permitDeny]) plus
-        
-    val or': ('req, 'res, permitDeny, [> permitDeny]) plus
-        
-    val xor': ('req, 'res, permitDeny, [> permitDeny]) plus
-        
-    val not': ('req, 'res, permitDeny, [> permitDeny]) one
-        
-    val denyUnlessAllPermit: ('req, 'res, result, [> permitDeny]) star
-        
-    val denyUnlessPermit: ('req, 'res, result, [> permitDeny]) star
+  val xor' : (permitDeny, [> permitDeny ]) plus
 
-    val asPermitDeny: ('req, 'res, result, [> permitDeny]) one
+  val not' : (permitDeny, [> permitDeny ]) one
 
-    val ( &&& ) : ('req, 'res, permitDeny, [> permitDeny]) two
-    val ( ||| ) : ('req, 'res, permitDeny, [> permitDeny]) two
+  val denyUnlessAllPermit : (result, [> permitDeny ]) star
 
-    val eval:
-        resource : 'resource
-      ->  request : 'request
-      -> ('request, 'resource, [< result]) t
-      -> result
+  val denyUnlessPermit : (result, [> permitDeny ]) star
 
-    val evalRequest:
-        resource : 'resource
-      ->  request : 'request
-      -> ('request, 'resource, [< result]) t
-      -> result
+  val asPermitDeny : (result, [> permitDeny ]) one
 
-    val evalResource:
-        resource : 'resource
-      ->  request : 'request
-      -> ('request, 'resource, [< result]) t
-      -> result
+  val ( &&& ) : (permitDeny, [> permitDeny ]) two
 
-  end
-= struct
+  val ( ||| ) : (permitDeny, [> permitDeny ]) two
 
-  type ('request, 'resource, 'inresult, 'outresult) plus =
-    ('request, 'resource, 'inresult) t
-    -> ('request, 'resource, 'inresult) t list
-    -> ('request, 'resource, 'outresult) t
+  val eval : resource:resource -> request:request -> [< result ] t -> result
 
-  and ('request, 'resource, 'inresult, 'outresult) star =
-    ('request, 'resource, 'inresult) t list
-    -> ('request, 'resource, 'outresult) t
+  val evalRequest : resource:resource -> request:request -> [< result ] t -> result
 
-  and ('request, 'resource, 'inresult, 'outresult) one =
-    ('request, 'resource, 'inresult) t
-    -> ('request, 'resource, 'outresult) t
+  val evalResource : resource:resource -> request:request -> [< result ] t -> result
+  
+  val string_of_result :
+    [< `Deny | `Failure | `NotApplicable | `Permit ] -> string
+end
 
-  and ('request, 'resource, 'inresult, 'outresult) two =
-    ('request, 'resource, 'inresult) t
-    -> ('request, 'resource, 'inresult) t
-    -> ('request, 'resource, 'outresult) t
+module Make (Config : CONFIG) =
+struct
+  type resource = Config.resource
+  
+  type request = Config.request
+  
+  type permit = [ `Permit ]
 
-  and ('request, 'resource, 'result) element =
-    | TargetResource: (('resource, 'result) targetResource) ->
-      ('request, 'resource, [> permit | notApplicable]) element
+  type deny = [ `Deny ]
 
-    | TargetRequest: (('request, 'result) targetRequest) ->
-      ('request, 'resource, [> permit | notApplicable]) element
+  type permitDeny = [ permit | deny ]
 
-    | Target: ('request, 'resource, 'result) target ->
-      ('request, 'resource, [> permit | notApplicable]) element
+  type notApplicable = [ `NotApplicable ]
 
-    | Condition: ('request, 'resource, 'result) condition ->
-      ('request, 'resource, [> result ]) element
+  type failure = [ `Failure ]
 
-  and ('request, 'resource, 'result) t =
-    | Element of ('request, 'resource, 'result) element
-    | And of ('request, 'resource, permitDeny) t
-             * ('request, 'resource, permitDeny) t list
-    | Or of ('request, 'resource, permitDeny) t
-             * ('request, 'resource, permitDeny) t list
-    | Xor of ('request, 'resource, permitDeny) t
-             * ('request, 'resource, permitDeny) t list
-    | Not of ('request, 'resource, permitDeny) t
-    | DenyUnlessAllPermit of ('request, 'resource, result) t list
-    | DenyUnlessPermit of ('request, 'resource, result) t list
-    | AsPermitDeny of ('request, 'resource, result) t
+  type result = [ permit | deny | notApplicable | failure ]
+
+  type targetResult = [ permit | notApplicable ]
+
+
+  type 'result target = resource : resource -> request : request -> 'result
+    constraint 'result = [< targetResult ]
+
+  type 'result targetResource = resource : resource -> 'result
+    constraint 'result = [< targetResult ]
+
+  type 'result targetRequest = request : request -> 'result
+    constraint 'result = [< targetResult ]
+
+  type 'result condition = resource : resource -> request : request -> 'result
+    constraint 'result = [< result ]
+
+  type ('inresult, 'outresult) plus =
+    'inresult t
+    -> 'inresult t list
+    -> 'outresult t
+
+  and ('inresult, 'outresult) star =
+    'inresult t list
+    -> 'outresult t
+
+  and ('inresult, 'outresult) one =
+    'inresult t
+    -> 'outresult t
+
+  and ('inresult, 'outresult) two =
+    'inresult t
+    -> 'inresult t
+    -> 'outresult t
+
+  and 'result element =
+    | TargetResource: ('result targetResource) ->
+      [> permit | notApplicable] element
+
+    | TargetRequest: ('result targetRequest) ->
+      [> permit | notApplicable] element
+
+    | Target: 'result target ->
+      [> permit | notApplicable] element
+
+    | Condition: 'result condition ->
+      [> result ] element
+
+  and 'result t =
+    | Element of 'result element
+    | And of permitDeny t
+             * permitDeny t list
+    | Or of permitDeny t
+            * permitDeny t list
+    | Xor of permitDeny t
+             * permitDeny t list
+    | Not of permitDeny t
+    | DenyUnlessAllPermit of result t list
+    | DenyUnlessPermit of result t list
+    | AsPermitDeny of result t
+
+  let string_of_result = function
+    | `Permit -> "Permit"
+    | `Deny -> "Deny"
+    | `NotApplicable -> "NotApplicable"
+    | `Failure -> "Failure"
 
   let element elt = Element elt
 
-  let targetResource v = element (TargetResource v)
-      
+  let targetResource v =
+    element (TargetResource v)
+
   let targetRequest v = element (TargetRequest v)
-      
+
   let target v = element (Target v)
-      
+
   let condition v = element (Condition v)
 
-  let and' hd tl = And (hd, tl)
-  
+  let and' (hd : [< permitDeny ] t) (tl : [< permitDeny ] t list) : [> permitDeny ] t = And (hd, tl)
+
   let or' hd tl = Or (hd, tl)
-  
+
   let xor' hd tl = Xor (hd, tl)
-      
+
   let not' cmb = Not cmb
 
   let denyUnlessAllPermit lst = DenyUnlessAllPermit lst
-      
+
   let denyUnlessPermit lst = DenyUnlessPermit lst
 
   let asPermitDeny t = AsPermitDeny t
@@ -177,9 +206,9 @@ module Combinator
   let rec eval_aux
       ~checkResource
       ~checkRequest
-      ~(resource : 'resource)
-      ~(request : 'request)
-      (cmb : ('request, 'resource, [< result]) t)
+      ~(resource : resource)
+      ~(request : request)
+      (cmb : [< result] t)
     : result
     =
     let cmb = Obj.magic cmb in
@@ -249,7 +278,7 @@ module Combinator
         | _ -> Some `Deny
       in
       let r = List.fold_left folder None lst in
-        Printf.printf "DenyUnlessAllPermit=%s\n" (match r with Some prev -> string_of_result prev | None -> "NONE");
+      Printf.printf "DenyUnlessAllPermit=%s\n" (match r with Some prev -> string_of_result prev | None -> "NONE");
       (
         match r with
         | Some `Permit -> `Permit
@@ -278,126 +307,4 @@ module Combinator
 
   let evalRequest ~resource ~request cmb : result
     = eval_aux ~checkRequest:true ~checkResource:false ~resource ~request cmb
-
 end
-
-  
-let sameResource : ('request, 'resource, 'result) Combinator.t =
-  let fn ~resource ~request =
-    print_endline "sameResource";
-    let rec aux = function
-      | [] ->
-        print_endline "sameResource 1";
-        `NotApplicable
-      | `ObjectType id :: _ ->
-        if List.mem (`Resource id) request then (
-        print_endline "sameResource 2";
-          `Permit
-        ) else (
-        print_endline "sameResource 3";
-          `NotApplicable
-        )
-      | _ :: tl -> aux tl
-    in
-    aux resource
-  in
-  Combinator.target fn
-
-let resObjectType objtype =
-  let fn ~resource =
-    if List.mem (`ObjectType objtype) resource then
-      `Permit
-    else
-      `NotApplicable
-  in
-  Combinator.targetResource fn
-
-let resAction action =
-  let fn ~resource =
-    if List.mem (`Action action) resource then
-      `Permit
-    else
-      `NotApplicable
-  in
-  Combinator.targetResource fn
-
-let isOwner =
-  let fn ~resource ~request =
-    print_endline "isOwner";
-    let rec aux = function
-      | [] ->
-        print_endline "isOwner 1";
-        `Failure
-      | `Owner id :: _ ->
-        if List.mem (`UserId id) request then (
-        print_endline "isOwner 2";
-          `Permit
-        ) else (
-        print_endline "isOwner 3";
-          `Deny
-        )
-      | _ :: tl -> aux tl
-    in
-    aux resource
-  in
-  Combinator.condition fn
-
-let isAdmin =
-  let fn ~request =
-    print_endline "isAdmin";
-    if List.mem `IsAdmin request then (
-      print_endline "isAdmin 1";
-      `Permit
-    ) else (
-      print_endline "isAdmin 2";
-      `NotApplicable
-    )
-  in
-  Combinator.targetRequest fn
-
-
-let isNotApplicable : ('request, 'resource, 'res) Combinator.t =
-  let fn ~resource ~request =
-    `NotApplicable
-  in
-  Combinator.target fn
-
-let isPermit : ('request, 'resource, 'res) Combinator.t =
-  let fn ~resource ~request =
-    `Permit
-  in
-  Combinator.target fn
-
-(********************************************)
-
-let resComment = resObjectType "comment"
-
-let resCreate = resAction "create"
-let resDelete = resAction "delete"
-let resEdit = resAction "edit"
-
-open Combinator
-
-let comments = asPermitDeny resComment &&& denyUnlessPermit [
-  denyUnlessAllPermit [
-    resCreate;
-  ];
-  denyUnlessAllPermit [
-    resDelete;
-    denyUnlessPermit [isAdmin; isOwner];
-  ];
-  denyUnlessAllPermit [
-    resEdit;
-    denyUnlessPermit [isAdmin; isOwner];
-  ];
-]
-
-let request = [`UserId "john"; `Resource "comment"; `Action "create"; `IsAdmin ]
-
-let resource = [`ObjectType "comment"; `Action "edit"; `Owner "john1" ]
-
-let () =
-  let open Combinator in
-  let r = eval ~request ~resource in
-  let r = string_of_result r in
-  Printf.printf "RESULT = %s\n" r
