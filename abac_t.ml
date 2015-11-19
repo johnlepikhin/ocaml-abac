@@ -26,67 +26,54 @@ sig
 
   type targetResult = [ `NotApplicable | `Permit ]
 
-  type 'result target = resource : resource -> request : request -> 'result
-    constraint 'result = [< targetResult ]
+  type target = resource : resource -> request : request -> targetResult
 
-  type 'result targetResource = resource : resource -> 'result
-    constraint 'result = [< targetResult ]
+  type targetResource = resource : resource -> targetResult
 
-  type 'result targetRequest = request : request -> 'result
-    constraint 'result = [< targetResult ]
+  type targetRequest = request : request -> targetResult
 
-  type 'result condition = resource : resource -> request : request -> 'result
-    constraint 'result = [< result ]
+  type condition = resource : resource -> request : request -> result
 
-  type ('inresult, 'outresult) plus =
-    'inresult t ->
-    'inresult t list -> 'outresult t
-      
-  and ('inresult, 'outresult) star =
-    'inresult t list -> 'outresult t
-      
-  and ('inresult, 'outresult) one =
-    'inresult t -> 'outresult t
-      
-  and ('inresult, 'outresult) two =
-    'inresult t -> 'inresult t -> 'outresult t
-      
-  and 'result t
+  type 'result t
 
+  val result : [< result] -> [< result] t
+  
   val targetResource :
-    [< targetResult] targetResource -> [> targetResult] t
+    targetResource -> [> targetResult] t
 
   val targetRequest :
-    [< targetResult] targetRequest -> [> targetResult] t
+    targetRequest -> [> targetResult] t
 
-  val target : [< targetResult] target -> [> targetResult] t
+  val target : target -> [> targetResult] t
 
-  val condition : [< result ] condition -> [> result ] t
+  val condition : condition -> result t
 
-  val and' : (permitDeny, [> permitDeny ]) plus
 
-  val or' : (permitDeny, [> permitDeny ]) plus
+  val and' : [< permitDeny] t -> [< permitDeny] t list -> [> permitDeny] t
 
-  val xor' : (permitDeny, [> permitDeny ]) plus
+  val or' : [< permitDeny] t -> [< permitDeny] t list -> [> permitDeny] t
 
-  val not' : (permitDeny, [> permitDeny ]) one
+  val xor' : [< permitDeny] t -> [< permitDeny] t list -> [> permitDeny] t
 
-  val denyUnlessAllPermit : (result, [> permitDeny ]) star
+  val not' : [< permitDeny] t -> [> permitDeny] t
 
-  val denyUnlessPermit : (result, [> permitDeny ]) star
+  val denyUnlessAllPermit : [< result] t list -> [> permitDeny] t
 
-  val asPermitDeny : (result, [> permitDeny ]) one
+  val denyUnlessPermit : [< result] t list -> [> permitDeny] t
 
-  val ( &&& ) : (permitDeny, [> permitDeny ]) two
+  val asPermitDeny : [< result] t -> [> permitDeny ] t
 
-  val ( ||| ) : (permitDeny, [> permitDeny ]) two
+  val ( &&& ) : [< permitDeny] t -> [< permitDeny] t -> [> permitDeny] t
+      
+  val ( ||| ) : [< permitDeny] t -> [< permitDeny] t -> [> permitDeny] t
 
-  val eval : resource:resource -> request:request -> [< result ] t -> result
+  val eval : resource:resource -> request:request -> result t -> result
 
-  val evalRequest : resource:resource -> request:request -> [< result ] t -> result
+  val applyResource : resource:resource -> [< result ] t -> result t
 
-  val evalResource : resource:resource -> request:request -> [< result ] t -> result
+  val applyRequest : request:request -> [< result ] t -> result t
   
-  val string_of_result :
-    [< `Deny | `Failure | `NotApplicable | `Permit ] -> string
+  val string_of_result : result -> string
+
+  val string_of_t : result t -> string
 end
