@@ -21,9 +21,9 @@ ACL is recursive variant of:
  1.1. Targets. This functions MUST return Permit or NotApplicable and should be evaluated very fast.
 Can be used for example to compare resourse type. Available types:
 
-targetResource ~resource      - check just resource
-targetRequest ~request        - check just request
-target ~resource ~request     - check request and resource
+ targetResource ~resource      - check just resource
+ targetRequest ~request        - check just request
+ target ~resource ~request     - check request and resource
 
  1.2. Conditions. This functions are like targets but can return any result [ Permit | Deny | NotApplicable | Failure ].
 
