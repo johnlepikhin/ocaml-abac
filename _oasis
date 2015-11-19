@@ -1,0 +1,13 @@
+OASISFormat: 0.4
+Name:        abac
+Version:     0.1
+Synopsis:    Attribute Based Access Control
+Authors:     Evgenii Lepikhin
+License:     LGPL-3.0
+Plugins:     META (0.4), DevFiles (0.3)
+BuildTools: ocamlbuild
+OCamlVersion: >= 4.01
+
+Library abac
+  Path:       src
+  Modules:    Abac_t, Abac

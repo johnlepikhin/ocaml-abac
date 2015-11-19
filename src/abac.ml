@@ -322,8 +322,8 @@ struct
 
   end
 
-  let applyResource ~resource t = Apply.apply ~target:(EvalResource resource) t
+  let applyResource ~resource t = Apply.(apply ~target:(EvalResource resource) t)
       
-  let applyRequest ~request t = Apply.apply ~target:(EvalRequest request) t
+  let applyRequest ~request t = Apply.(apply ~target:(EvalRequest request) t)
 
 end
