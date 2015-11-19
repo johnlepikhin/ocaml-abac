@@ -10,10 +10,10 @@ There are three values:
 
 Function "eval" evaluates all of them and returns result which is one of:
 
- `Permit - access granted
- `Deny - access denied
- `NotApplicable - request is not applicable to this resource
- `Failure - cannot apply ACL to this request/resource
+ Permit - access granted
+ Deny - access denied
+ NotApplicable - request is not applicable to this resource
+ Failure - cannot apply ACL to this request/resource
  
 ACL is recursive variant of:
 
@@ -25,7 +25,7 @@ targetResource ~resource      - check just resource
 targetRequest ~request        - check just request
 target ~resource ~request     - check request and resource
 
- 1.2. Conditions. This functions are like targets but can return any result [ Permit | Deny | NotApplicable | `Failure ].
+ 1.2. Conditions. This functions are like targets but can return any result [ Permit | Deny | NotApplicable | Failure ].
 
  2. Combinators and converters:
  2.1. Logical AND, OR, NOT, XOR. Accepts list of [ Permit | Deny ] and returns [ Permit | Deny ]
