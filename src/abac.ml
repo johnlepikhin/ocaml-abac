@@ -128,14 +128,12 @@ struct
 
     | DenyUnlessAllPermit lst ->
       let folder prev incmb =
-        Printf.printf "folder next, prev=%s\n" (match prev with Some prev -> string_of_result prev | None -> "NONE");
         match prev with
         | None | Some `Permit ->
           Some (eval ~resource ~request incmb)
         | _ -> Some `Deny
       in
       let r = List.fold_left folder None lst in
-      Printf.printf "DenyUnlessAllPermit=%s\n" (match r with Some prev -> string_of_result prev | None -> "NONE");
       (
         match r with
         | Some `Permit -> `Permit
