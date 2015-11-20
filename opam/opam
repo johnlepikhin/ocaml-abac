@@ -1,0 +1,25 @@
+opam-version: "1.2"
+name: "abac"
+version: "0.1"
+maintainer: "Evgenii Lepikhin <johnlepikhin@gmail.com>"
+authors: [ "Evgenii Lepikhin <johnlepikhin@gmail.com>" ]
+license: "LGPL-3.0"
+homepage: "https://github.com/johnlepikhin/ocaml-abac"
+bug-reports: "https://github.com/johnlepikhin/ocaml-abac/issues"
+build: [
+  ["ocaml" "setup.ml" "-configure" "--prefix" prefix]
+  ["ocaml" "setup.ml" "-build"]
+]
+install: ["ocaml" "setup.ml" "-install"]
+remove: [
+  ["ocamlfind" "remove" "abac"]
+]
+build-test: [
+  ["ocaml" "setup.ml" "-configure" "--enable-tests"]
+  ["ocaml" "setup.ml" "-build"]
+  ["ocaml" "setup.ml" "-test"]
+]
+depends: [
+  "ocamlfind" {build}
+]
+available: [ ocaml-version >= "4.01" ]
