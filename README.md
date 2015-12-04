@@ -97,7 +97,8 @@ let () =
 ### Partial apply
 It is possible to evaluate only resource *targets* or only request *targets*:
 
-```utop # print_endline @@ string_of_t @@ acltree;;
+```
+utop # print_endline @@ string_of_t @@ acltree;;
 DenyUnlessAllPermit
   TargetResource
   TargetRequest                                                                             
@@ -132,4 +133,5 @@ utop # print_endline @@ string_of_t @@ commentsACLTree;;
 TargetResource
 - : unit = ()
 
-(* Most of rules pre-applied. The only remaining rule is about to check `Resourse in resource *)```
+(* Most of rules pre-applied. The only remaining rule is about to check `Resourse in resource *)
+```
