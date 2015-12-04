@@ -94,3 +94,42 @@ let () =
     let r4 = eval ~resource:[`Resource "comments"; `Owner "johndoe"] ~request:[`Resource "users"; `UserID "johndoe"] acltree in
     string_of_result r4 |> print_endline
 ```
+### Partial apply
+It is possible to evaluate only resource *targets* or only request *targets*:
+
+```utop # print_endline @@ string_of_t @@ acltree;;
+DenyUnlessAllPermit
+  TargetResource
+  TargetRequest                                                                             
+  DenyUnlessPermit
+    TargetRequest
+    Condition
+- : unit = ()
+
+(* now apply what we know about resource: *)
+
+utop # let commentsACLTree = applyResource ~resource:[`Resource "comments"] acltree;;
+val commentsACLTree : result t = <abstr>
+
+(* and view on ACL tree again: *)
+
+utop # print_endline @@ string_of_t @@ commentsACLTree;;
+DenyUnlessAllPermit
+  DenyUnlessPermit
+    Condition
+    TargetRequest
+  TargetRequest
+  - : unit = ()
+
+(* New ACL tree is optimized for usage in resources associated with comments *)
+
+(* The same, pre-apply request target information: *)
+
+utop # let commentsACLTree = applyRequest ~request:[`Resource "comments"; `IsAdmin] acltree;;
+val commentsACLTree : result t = <abstr>
+
+utop # print_endline @@ string_of_t @@ commentsACLTree;;
+TargetResource
+- : unit = ()
+
+(* Most of rules pre-applied. The only remaining rule is about to check `Resourse in resource *)```
